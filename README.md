@@ -21,7 +21,10 @@
 3. Open the switcher. Click its menu bar icon, choose a provider, then confirm. If ChatGPT is open, switching quits and reopens it. Finish active work first and start a fresh local Codex session after switching.
 
 <p align="center">
-  <img src="docs/assets/panel.png" alt="OpenAI is active and DeepSeek is selected. The panel is waiting for confirmation." width="340">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/previews/en-dark.png">
+    <img src="docs/assets/previews/en-light.png" alt="OpenAI is active and DeepSeek is selected. The panel is waiting for confirmation." width="340">
+  </picture>
 </p>
 
 ## Settings

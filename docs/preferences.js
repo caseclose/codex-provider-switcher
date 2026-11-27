@@ -27,7 +27,7 @@ const translations = {
     lead: "在 Codex Desktop 使用 OpenAI、DeepSeek、GLM 或 Kimi。GLM 與 Kimi 支援程式設計方案和按量計費 API，可依地區在面板中儲存金鑰。",
     download: "下載 macOS 版", release: "查看版本發行", compat: "macOS 14+ · Apple 晶片與 Intel · MIT",
     previewAlt: "切換面板列出六個供應商，目前使用 OpenAI，已選擇 DeepSeek 等待確認。",
-    previewCaption: "macOS 切換面板（簡體中文畫面示例）", providers: "支援的供應商",
+    previewCaption: "macOS 切換面板", providers: "支援的供應商",
     openAI: "沿用 Codex Desktop 的一般啟動設定。",
     deepSeek: "DeepSeek Flash 1017，使用現有的 deepseek 設定。",
     glmCoding: "GLM-5.4，使用智譜 BigModel 或 Z.ai 的方案額度。",
@@ -48,7 +48,7 @@ const translations = {
     lead: "Use OpenAI, DeepSeek, GLM, or Kimi in Codex Desktop. GLM and Kimi support coding plans and usage-based APIs, with separate keys for each region.",
     download: "Download for macOS", release: "View release", compat: "macOS 14+ · Apple silicon and Intel · MIT",
     previewAlt: "The switcher lists six providers. OpenAI is active and DeepSeek is selected, awaiting confirmation.",
-    previewCaption: "The macOS switcher, shown in Simplified Chinese", providers: "Supported providers",
+    previewCaption: "macOS switcher preview", providers: "Supported providers",
     openAI: "Uses your regular Codex Desktop startup settings.",
     deepSeek: "DeepSeek Flash 1017 with your existing deepseek configuration.",
     glmCoding: "GLM-5.4 with your BigModel or Z.ai coding plan quota.",
@@ -69,7 +69,7 @@ const translations = {
     lead: "Codex Desktop で OpenAI、DeepSeek、GLM、Kimi を選べます。GLM と Kimi はコーディングプランと従量課金 API に対応し、地域ごとにキーを保存できます。",
     download: "macOS 版をダウンロード", release: "リリースを見る", compat: "macOS 14 以降 · Apple シリコンと Intel · MIT",
     previewAlt: "切り替えパネルに 6 つのプロバイダーを表示。OpenAI を使用中で、DeepSeek への切り替えを確認できます。",
-    previewCaption: "macOS の切り替えパネル（簡体字中国語での表示例）", providers: "対応プロバイダー",
+    previewCaption: "macOS の切り替えパネル", providers: "対応プロバイダー",
     openAI: "Codex Desktop の通常の起動設定を使用します。",
     deepSeek: "既存の deepseek 設定で DeepSeek Flash 1017 を使用します。",
     glmCoding: "BigModel または Z.ai のプラン枠で GLM-5.4 を使用します。",
@@ -86,8 +86,10 @@ const translations = {
 };
 
 const root = document.documentElement;
+const panelPreview = document.getElementById("panel-preview");
 const language = preference("language", (value) => {
   setLanguage(value);
+  syncPreview();
   savePreference(languageKey, value);
   const url = new URL(location.href);
   url.searchParams.set("lang", value);
@@ -212,12 +214,26 @@ function setTheme(mode) {
   if (mode === "system") delete root.dataset.theme;
   else root.dataset.theme = mode;
   theme.setValue(mode);
-  syncThemeColor();
+  syncAppearance();
 }
 
-function syncThemeColor() {
-  const dark = theme.value === "dark" || (theme.value === "system" && darkPreference.matches);
-  document.querySelector('meta[name="theme-color"]').content = dark ? "#111523" : "#f5f8fc";
+function effectiveTheme() {
+  if (theme.value !== "system") return theme.value;
+  return darkPreference.matches ? "dark" : "light";
+}
+
+function syncAppearance() {
+  const mode = effectiveTheme();
+  document.querySelector('meta[name="theme-color"]').content = mode === "dark" ? "#111523" : "#f5f8fc";
+  syncPreview(mode);
+}
+
+function syncPreview(mode = effectiveTheme()) {
+  const locale = root.lang;
+  const source = `assets/previews/${locale}-${mode}.png`;
+  if (panelPreview.getAttribute("src") === source) return;
+  panelPreview.height = locale === "ja" ? 912 : 884;
+  panelPreview.src = source;
 }
 
 const queryLanguage = new URL(location.href).searchParams.get("lang");
@@ -230,5 +246,5 @@ setLanguage(
 const savedTheme = readPreference(themeKey);
 setTheme(savedTheme === "light" || savedTheme === "dark" ? savedTheme : "system");
 
-darkPreference.addEventListener("change", syncThemeColor);
+darkPreference.addEventListener("change", syncAppearance);
 document.getElementById("preferences").hidden = false;
