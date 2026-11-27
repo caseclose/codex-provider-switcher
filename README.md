@@ -23,7 +23,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/previews/en-dark.png">
-    <img src="docs/assets/previews/en-light.png" alt="OpenAI is active and DeepSeek is selected. The panel is waiting for confirmation." width="340">
+    <img src="docs/assets/previews/en-light.png" alt="Nine provider options with the DeepSeek API key setup visible." width="340">
   </picture>
 </p>
 
@@ -45,6 +45,15 @@ The website also follows system appearance by default. Read it in [简体中文]
 | Kimi Coding Plan | `kimi-for-coding` | Kimi Code API key from the Kimi Code console |
 | GLM API | `glm-5.3` | Pay-as-you-go API key from BigModel or Z.ai |
 | Kimi API | `kimi-k3` | Pay-as-you-go API key from Moonshot Open Platform |
+| Gemini API | `gemini-3.8-flash` | [Google AI Studio API key](https://aistudio.google.com/apikey) |
+| Claude API | `claude-sonnet-5-5` | [Workspace-scoped Claude API key](https://platform.claude.com/settings/keys) |
+| Grok API | `grok-4.7` | [xAI API key](https://console.x.ai/) |
+
+### Set up Gemini, Claude, or Grok
+
+Select the provider in the menu, save its API key, and confirm the switch. Start a fresh local Codex session after ChatGPT reopens.
+
+Grok uses xAI's [Responses API](https://docs.x.ai/developers/grok-4-7). Gemini and Claude use a bridge bound to the Mac's loopback interface during the selected Codex launch. It forwards standard chat, image inputs, and function calls to the official [Gemini](https://aistudio.google.com/docs/openai) or [Claude](https://platform.claude.com/docs/en/cli-sdks-libraries/libraries/openai-sdk) Chat Completions endpoint. The bridge uses the Node runtime bundled with ChatGPT Desktop. OpenAI-hosted tools and Responses server-side conversation state require separate support.
 
 ### Set up GLM or Kimi
 
@@ -64,11 +73,11 @@ Official guides · [BigModel Coding Plan](https://docs.bigmodel.cn/cn/coding-pla
 
 ## Set up DeepSeek once
 
-If your Codex config already has a working provider called `deepseek`, you can use it with the switcher. To set it up for the first time, follow these steps.
+1. Create an API key in the [DeepSeek developer platform](https://platform.deepseek.com/api_keys).
+2. Select **DeepSeek** in the switcher, click **Set API Key**, and save the key to macOS Keychain.
+3. Confirm the switch and start a new local Codex session.
 
-1. Create a DeepSeek API key in the [DeepSeek developer platform](https://platform.deepseek.com/).
-2. Open **Keychain Access** and select your **login** keychain. Choose **File → New Password Item**. Name the item `codex-provider-deepseek` and enter your DeepSeek key in the password field.
-3. Add this provider to `~/.codex/config.toml`. Keep any existing OpenAI or unrelated settings. If this named provider already exists, merge its settings instead of appending a duplicate table.
+If your Codex configuration already has a working `deepseek` provider, you can switch without adding a new key. Here is the legacy configuration for a keychain item named `codex-provider-deepseek`.
 
 ```toml
 [model_providers.deepseek]
@@ -98,7 +107,7 @@ The build downloads provider artwork from the official sources and writes the si
 
 从 macOS 菜单栏打开切换器，可选 **OpenAI**、**DeepSeek**、**ZCode / GLM Coding Plan**、**Kimi Coding Plan**、**GLM API** 或 **Kimi API**。切换后新建一个本地 Codex 会话。
 
-首次使用 GLM 或 Kimi 时，选择密钥所属地区，点击「设置 API Key」并保存。套餐与按量 API 使用各自的凭据，密钥保存在 macOS 钥匙串。DeepSeek 沿用上文的 `deepseek` 配置。
+首次使用第三方 API 或套餐时，点击「设置 API Key」并保存到 macOS 钥匙串。GLM 和 Kimi 还需要选择密钥所属地区。已有可用的 `deepseek` 配置时，可以直接切换。Gemini 与 Claude 通过本机桥接调用官方 API，Grok 直连官方 Responses API。
 
 ## License
 

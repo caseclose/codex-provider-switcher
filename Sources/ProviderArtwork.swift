@@ -10,6 +10,9 @@ enum ProviderArtwork {
         case .glmAPI: name = "BigModel"
         case .kimiCoding: name = dark ? "KimiCodeDark" : "KimiCodeLight"
         case .kimiAPI: name = dark ? "KimiPlatformDark" : "KimiPlatformLight"
+        case .geminiAPI: name = "Gemini"
+        case .claudeAPI: name = "Claude"
+        case .grokAPI: name = "Grok"
         }
         guard let url = bundle.url(forResource: name, withExtension: "png") else { return nil }
         return NSImage(contentsOf: url)

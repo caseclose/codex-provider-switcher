@@ -46,3 +46,6 @@
 "multipleInstances" = "More than one ChatGPT instance is running. Quit the extra instances first.";
 "quitRejected" = "ChatGPT didn’t accept the quit request. Save your work and quit ChatGPT, then try again.";
 "quitTimedOut" = "ChatGPT is still running. Respond to any quit prompt, then try again.";
+"deepSeekKeyRequired" = "Add a key or use your existing Codex setup.";
+"deepSeekSetupRequired" = "Set a DeepSeek API key or check your existing deepseek provider configuration.";
+"bridgeMissing" = "The local API bridge is unavailable. Update ChatGPT Desktop and reinstall the switcher.";

@@ -16,7 +16,7 @@ final class ProviderPanelState: ObservableObject {
 
     var keyChangedForCurrentSelection: Bool { changedKey == selected && current == selected }
     var canConfirm: Bool {
-        !busy && !editingKey && (selected.keychainService == nil || hasKey)
+        !busy && !editingKey && (selected.keychainService == nil || hasKey || selected.provider == .deepSeek)
             && (selected != current || keyChangedForCurrentSelection)
     }
 
@@ -193,12 +193,14 @@ struct ProviderPanel: View {
     private func credentials(setupURL: URL) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Picker(L10n.text("region"), selection: Binding(get: { state.selected.region }, set: state.selectRegion)) {
-                    ForEach(ProviderRegion.allCases) { region in
-                        Text(region.title).tag(region)
+                if state.selected.usesRegion {
+                    Picker(L10n.text("region"), selection: Binding(get: { state.selected.region }, set: state.selectRegion)) {
+                        ForEach(ProviderRegion.allCases) { region in
+                            Text(region.title).tag(region)
+                        }
                     }
+                    .fixedSize()
                 }
-                .fixedSize()
                 Spacer()
                 if !state.editingKey {
                     Button(L10n.text(state.hasKey ? "replaceKey" : "setKey"), action: state.beginKeyEdit)
@@ -213,13 +215,17 @@ struct ProviderPanel: View {
                 }
             }
             HStack {
-                Text(L10n.text(state.hasKey ? "keySaved" : "keyRequired"))
+                Text(L10n.text(state.hasKey ? "keySaved" : keyRequiredMessage))
                     .foregroundStyle(.secondary)
                 Spacer()
                 Link(L10n.text("providerGuide"), destination: setupURL)
             }
             .font(.system(size: 11))
         }
+    }
+
+    private var keyRequiredMessage: String {
+        state.selected.provider == .deepSeek ? "deepSeekKeyRequired" : "keyRequired"
     }
 }
 

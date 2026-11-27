@@ -46,3 +46,6 @@
 "multipleInstances" = "有多个 ChatGPT 实例正在运行。请先退出多余的实例。";
 "quitRejected" = "ChatGPT 没有接受退出请求。请保存工作并退出 ChatGPT 后重试。";
 "quitTimedOut" = "ChatGPT 尚未退出。请处理退出提示后重试。";
+"deepSeekKeyRequired" = "可添加密钥，或使用已有 Codex 配置。";
+"deepSeekSetupRequired" = "请设置 DeepSeek API Key，或检查 Codex 中已有的 deepseek 配置。";
+"bridgeMissing" = "本地 API 桥接不可用。请更新 ChatGPT Desktop 并重新安装切换器。";

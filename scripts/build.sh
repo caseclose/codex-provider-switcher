@@ -21,6 +21,7 @@ cp "$root/Resources/Info.plist" "$staged/Contents/"
 cp -R "$root/Resources/"*.lproj "$resources/"
 cp "$root/Resources/"*-models.json "$root/Resources/provider-codex" "$root/Resources/deepseek-codex" "$resources/"
 cp "$root/Resources/ProviderIcons/"*.png "$resources/"
+cp "$root/Resources/responses-bridge.mjs" "$resources/"
 chmod 755 "$resources/provider-codex" "$resources/deepseek-codex"
 
 # OpenAI and DeepSeek own these marks. They identify the configured providers in the UI.

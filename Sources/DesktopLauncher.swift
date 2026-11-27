@@ -46,7 +46,7 @@ final class DesktopLauncher {
         guard Bundle(url: appURL)?.bundleIdentifier == bundleIdentifier else {
             throw SwitchError.appMissing(appURL.path)
         }
-        let environment = try launchEnvironment(for: selection)
+        let environment = try await launchEnvironment(for: selection)
 
         let apps = runningApps
         guard apps.count <= 1 else { throw SwitchError.multipleInstances }
@@ -80,7 +80,7 @@ final class DesktopLauncher {
         preferences.removeObject(forKey: "DeepSeekLaunchDate")
     }
 
-    private func launchEnvironment(for selection: ProviderSelection) throws -> [String: String]? {
+    private func launchEnvironment(for selection: ProviderSelection) async throws -> [String: String]? {
         let provider = selection.provider
         guard let model = provider.model else { return nil }
         let catalog = providerCLI.deletingLastPathComponent().appendingPathComponent("\(model)-models.json")
@@ -93,6 +93,15 @@ final class DesktopLauncher {
         guard binaries.contains(where: { files.isExecutableFile(atPath: runtime.appendingPathComponent($0).path) }) else {
             throw SwitchError.bundledCLIMissing
         }
+        if provider.requiresBridge {
+            let resources = runtime.deletingLastPathComponent()
+            let nodePaths = ["node", "cua_node/bin/node"]
+            let bridge = providerCLI.deletingLastPathComponent().appendingPathComponent("responses-bridge.mjs")
+            guard nodePaths.contains(where: { files.isExecutableFile(atPath: resources.appendingPathComponent($0).path) }),
+                  files.isReadableFile(atPath: bridge.path) else {
+                throw SwitchError.bridgeMissing
+            }
+        }
 
         var environment = [
             "CODEX_CLI_PATH": providerCLI.path,
@@ -101,17 +110,39 @@ final class DesktopLauncher {
             "CODEX_SWITCHER_MODEL": model
         ]
         if let baseURL = selection.baseURL, let service = selection.keychainService {
-            guard try ProviderKeychain.contains(service) else { throw SwitchError.keyMissing(selection.title) }
+            guard try ProviderKeychain.contains(service) else {
+                guard provider == .deepSeek else { throw SwitchError.keyMissing(selection.title) }
+                guard try await acceptsLegacyDeepSeekConfig(environment) else { throw SwitchError.deepSeekSetupRequired }
+                return environment
+            }
+            if provider == .deepSeek { environment["CODEX_SWITCHER_PROVIDER"] = "switcher_deepseek" }
             environment["CODEX_SWITCHER_BASE_URL"] = baseURL
             environment["CODEX_SWITCHER_KEYCHAIN_SERVICE"] = service
             environment["CODEX_SWITCHER_KEYCHAIN_ACCOUNT"] = ProviderKeychain.account
         }
         return environment
     }
+
+    private func acceptsLegacyDeepSeekConfig(_ overrides: [String: String]) async throws -> Bool {
+        let probe = Process()
+        probe.executableURL = providerCLI
+        probe.arguments = ["app-server", "--print-startup-config"]
+        probe.environment = ProcessInfo.processInfo.environment.merging(overrides) { _, value in value }
+        probe.standardInput = FileHandle.nullDevice
+        probe.standardOutput = FileHandle.nullDevice
+        probe.standardError = FileHandle.nullDevice
+        return try await withCheckedThrowingContinuation { continuation in
+            probe.terminationHandler = { process in
+                continuation.resume(returning: process.terminationStatus == 0)
+            }
+            do { try probe.run() }
+            catch { continuation.resume(throwing: error) }
+        }
+    }
 }
 
 enum SwitchError: LocalizedError {
-    case appMissing(String), launcherMissing, bundledCLIMissing, keyMissing(String)
+    case appMissing(String), launcherMissing, bundledCLIMissing, bridgeMissing, keyMissing(String), deepSeekSetupRequired
     case multipleInstances, quitRejected, quitTimedOut
 
     var errorDescription: String? {
@@ -119,7 +150,9 @@ enum SwitchError: LocalizedError {
         case .appMissing(let path): L10n.text("desktopMissing", path)
         case .launcherMissing: L10n.text("launcherMissing")
         case .bundledCLIMissing: L10n.text("cliMissing")
+        case .bridgeMissing: L10n.text("bridgeMissing")
         case .keyMissing(let title): L10n.text("missingKey", title)
+        case .deepSeekSetupRequired: L10n.text("deepSeekSetupRequired")
         case .multipleInstances: L10n.text("multipleInstances")
         case .quitRejected: L10n.text("quitRejected")
         case .quitTimedOut: L10n.text("quitTimedOut")

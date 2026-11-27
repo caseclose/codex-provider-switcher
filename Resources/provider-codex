@@ -35,14 +35,34 @@ if [[ $provider != deepseek ]]; then
     service=$(toml_string "${CODEX_SWITCHER_KEYCHAIN_SERVICE:?Missing Keychain service}")
     account=$(toml_string "${CODEX_SWITCHER_KEYCHAIN_ACCOUNT:?Missing Keychain account}")
     auth="{command = \"/usr/bin/security\", args = [\"find-generic-password\", \"-a\", $account, \"-s\", $service, \"-w\"], timeout_ms = 60000}"
+    case "$provider" in
+        switcher_gemini_api) efforts='["low","medium","high"]' ;;
+        switcher_claude_api) efforts='["high"]' ;;
+        switcher_grok_api) efforts='["low","medium","high","xhigh"]' ;;
+        *) efforts='["low","high","max"]' ;;
+    esac
     launch_config+=(
         -c "model_providers.$provider = {name = $(toml_string "$model"), base_url = $base_url, wire_api = \"responses\", auth = $auth}"
         -c 'model_reasoning_effort="high"'
-        -c 'desktop.enabled-reasoning-efforts=["low","high","max"]'
+        -c "desktop.enabled-reasoning-efforts=$efforts"
     )
-    if [[ $provider != switcher_kimi_coding ]]; then
+    if [[ $provider != switcher_kimi_coding && $provider != switcher_deepseek ]]; then
         launch_config+=(-c 'web_search="disabled"')
     fi
 fi
+
+case "$provider" in
+    switcher_gemini_api|switcher_claude_api)
+        node="$app/Contents/Resources/node"
+        if [ ! -x "$node" ]; then
+            node="$app/Contents/Resources/cua_node/bin/node"
+        fi
+        if [ ! -x "$node" ]; then
+            printf '%s\n' 'The runtime for the local Responses bridge was not found.' >&2
+            exit 1
+        fi
+        exec "$node" "$resources/responses-bridge.mjs" "$provider" "$codex" "${#launch_config[@]}" "${launch_config[@]}" "$@"
+        ;;
+esac
 
 exec "$codex" "${launch_config[@]}" "$@"

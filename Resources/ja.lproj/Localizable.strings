@@ -46,3 +46,6 @@
 "multipleInstances" = "複数の ChatGPT が実行されています。先に不要なインスタンスを終了してください。";
 "quitRejected" = "ChatGPT が終了要求を受け付けませんでした。作業を保存して ChatGPT を終了し、もう一度お試しください。";
 "quitTimedOut" = "ChatGPT はまだ実行中です。終了の確認に応答してから、もう一度お試しください。";
+"deepSeekKeyRequired" = "キーを追加するか、既存の Codex 設定を使います。";
+"deepSeekSetupRequired" = "DeepSeek の API キーを設定するか、Codex の既存の deepseek 設定を確認してください。";
+"bridgeMissing" = "ローカル API ブリッジを利用できません。ChatGPT Desktop を更新し、切り替えアプリを再インストールしてください。";
