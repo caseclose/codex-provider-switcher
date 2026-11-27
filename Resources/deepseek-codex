@@ -1,0 +1,15 @@
+#!/bin/sh
+set -eu
+app=${CODEX_SWITCHER_DESKTOP_APP:-/Applications/ChatGPT.app}
+runtime="$app/Contents/Resources/codex-cli"
+codex="$runtime/CodexCLI.app/Contents/MacOS/codex"
+if [ ! -x "$codex" ]; then
+    codex="$runtime/bin/codex"
+fi
+if [ ! -x "$codex" ]; then
+    printf '%s\n' 'ChatGPT Desktop’s bundled Codex CLI was not found.' >&2
+    exit 1
+fi
+resources=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+catalog=$(printf '%s' "$resources/deepseek-models.json" | sed 's/[\\"]/\\&/g')
+exec "$codex" -c 'model_provider="deepseek"' -c 'model="deepseek-flash"' -c "model_catalog_json=\"$catalog\"" "$@"

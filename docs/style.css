@@ -1,0 +1,108 @@
+:root {
+  color-scheme: dark;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: #eff3fa;
+  background: #111523;
+  --muted: #a9b5ca;
+  --line: #2d364a;
+  --mint: #80eee0;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; line-height: 1.55; }
+a { color: inherit; text-decoration: none; }
+a:focus-visible { outline: 2px solid var(--mint); outline-offset: 5px; }
+.wrap { width: min(1100px, calc(100% - 64px)); margin-inline: auto; }
+
+.site-header {
+  min-height: 85px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  border-bottom: 1px solid var(--line);
+}
+.identity { display: inline-flex; align-items: center; gap: 10px; font-weight: 660; }
+.identity img { display: block; flex: none; }
+.identity small { color: var(--muted); font-size: 0.84rem; font-weight: 530; white-space: nowrap; }
+nav { display: flex; gap: clamp(14px, 3vw, 30px); color: var(--muted); font-size: 0.9rem; }
+nav a:hover, footer a:hover { color: var(--mint); }
+
+.hero {
+  display: grid;
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.02fr);
+  gap: clamp(26px, 5vw, 80px);
+  padding: clamp(54px, 9vw, 112px) 0 clamp(64px, 10vw, 108px);
+}
+.platform { width: fit-content; margin: 0 0 19px; color: #c0f7ef; font-size: 0.875rem; font-weight: 620; }
+h1 { margin: 0; font-size: clamp(2.9rem, 5.45vw, 4.7rem); line-height: 1.14; font-weight: 710; letter-spacing: -0.055em; }
+h1 span { color: var(--mint); }
+.lead { max-width: 29rem; margin: 24px 0 26px; color: var(--muted); font-size: 1.08rem; line-height: 1.78; }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.button {
+  display: inline-flex;
+  min-height: 47px;
+  align-items: center;
+  justify-content: center;
+  padding: 0.67rem 1.04rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 620;
+}
+.primary { color: #0b2527; background: var(--mint); }
+.primary:hover { background: #a6fff2; }
+.secondary { color: #e3eaf8; border-color: #3a465b; }
+.secondary:hover { background: #232e42; }
+.compat { margin: 16px 0 0; color: var(--muted); font-size: 0.875rem; }
+
+.preview {
+  min-width: 0;
+  margin: 0;
+  padding: clamp(16px, 3vw, 35px);
+  border: 1px solid #394863;
+  border-radius: 27px;
+  background: radial-gradient(ellipse at 25% 18%, #3b5574 0%, #24314a 43%, #1b2437 95%);
+}
+.preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: clamp(12px, 2.1vw, 24px);
+  box-shadow: 0 20px 38px #080e1e80;
+}
+.preview figcaption { margin: 17px 0 0; color: #cfdbef; font-size: 0.875rem; }
+
+.setup { padding: 42px 0 48px; border-top: 1px solid var(--line); }
+h2 { margin: 0 0 23px; font-size: clamp(1.55rem, 3vw, 2rem); line-height: 1.25; }
+.setup ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; margin: 0 0 22px; padding-left: 1.4rem; }
+.setup li { padding-left: 0.36rem; }
+.setup li::marker { color: var(--mint); font-weight: 660; }
+h3 { margin: 0 0 7px; font-size: 1.03rem; }
+.setup p { margin: 0; color: var(--muted); }
+.text-link { color: var(--mint); text-underline-offset: 3px; text-decoration: underline; }
+.site-footer { display: flex; justify-content: space-between; gap: 18px; padding-block: 24px 35px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.875rem; }
+.site-footer p { margin: 0; }
+.site-footer a { white-space: nowrap; }
+
+@media (max-width: 780px) {
+  .wrap { width: min(100% - 36px, 550px); }
+  .hero { grid-template-columns: 1fr; gap: 36px; }
+  .setup ol { grid-template-columns: 1fr; gap: 17px; }
+}
+
+@media (max-width: 400px) {
+  .site-header { gap: 10px; }
+  .identity { font-size: 0.875rem; gap: 4px; }
+  .identity img { width: 34px; height: 34px; }
+  .identity small { display: block; font-size: 0.75rem; }
+  nav { font-size: 0.82rem; }
+  h1 { font-size: clamp(2.55rem, 11vw, 3rem); }
+  .site-footer { flex-direction: column; gap: 7px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
