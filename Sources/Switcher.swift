@@ -19,7 +19,7 @@ private final class ProviderWindow: NSPanel {
 
 @MainActor
 final class Switcher: NSObject, NSApplicationDelegate, NSWindowDelegate {
-    private let status = NSStatusBar.system.statusItem(withLength: 27)
+    private let status = NSStatusBar.system.statusItem(withLength: ProviderArtwork.statusItemLength)
     private let panel = ProviderPanelState()
     private let settings = AppSettings()
     private let window = ProviderWindow(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel],
@@ -87,10 +87,7 @@ final class Switcher: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if !panel.busy, let mark = ProviderArtwork.statusImage(for: selection.provider, dark: dark) {
             status.button?.image = mark
         } else {
-            let fallback = NSImage(systemSymbolName: "arrow.left.arrow.right", accessibilityDescription: label)?
-                .withSymbolConfiguration(.init(pointSize: 14, weight: .semibold))
-            fallback?.isTemplate = true
-            status.button?.image = fallback
+            status.button?.image = ProviderArtwork.statusFallback(accessibilityDescription: label)
         }
         status.button?.imagePosition = .imageOnly
         status.button?.setAccessibilityLabel(L10n.text("statusLabel", label))
@@ -137,6 +134,7 @@ final class Switcher: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private func layoutPanel() -> Bool {
         guard let button = status.button, let statusWindow = button.window else { return false }
         let anchor = statusWindow.convertToScreen(button.convert(button.bounds, to: nil))
+            .offsetBy(dx: -ProviderArtwork.statusTrailingInset / 2, dy: 0)
         guard let screen = NSScreen.screens.first(where: { $0.frame.contains(NSPoint(x: anchor.midX, y: anchor.midY)) })
                 ?? statusWindow.screen else { return false }
         return layoutPanel(anchor: anchor, visibleFrame: screen.visibleFrame)
