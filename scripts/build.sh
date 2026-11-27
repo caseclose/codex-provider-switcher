@@ -18,6 +18,7 @@ resources="$staged/Contents/Resources"
 binary="$staged/Contents/MacOS/CodexProviderSwitcher"
 mkdir -p "$resources" "$(dirname "$binary")" "$work/AppIcon.iconset"
 cp "$root/Resources/Info.plist" "$staged/Contents/"
+cp -R "$root/Resources/"*.lproj "$resources/"
 cp "$root/Resources/"*-models.json "$root/Resources/provider-codex" "$root/Resources/deepseek-codex" "$resources/"
 cp "$root/Resources/ProviderIcons/"*.png "$resources/"
 chmod 755 "$resources/provider-codex" "$resources/deepseek-codex"
@@ -37,6 +38,7 @@ swiftc -parse-as-library -O "$root/Sources/AppIconArtwork.swift" -o "$work/rende
 iconutil -c icns "$work/AppIcon.iconset" -o "$resources/AppIcon.icns"
 
 sources=(
+    "$root/Sources/AppSettings.swift"
     "$root/Sources/DesktopLauncher.swift"
     "$root/Sources/Provider.swift"
     "$root/Sources/ProviderArtwork.swift"

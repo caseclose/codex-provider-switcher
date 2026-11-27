@@ -8,6 +8,7 @@ final class ProviderPanelState: ObservableObject {
     @Published private(set) var selected: ProviderSelection = .openAI
     @Published var busy = false
     @Published var error: String?
+    @Published var showingSettings = false
     @Published var keyDraft = ""
     @Published private(set) var hasKey = false
     @Published private(set) var editingKey = false
@@ -21,6 +22,7 @@ final class ProviderPanelState: ObservableObject {
 
     func prepareToOpen() {
         guard !busy else { return }
+        showingSettings = false
         select(current ?? .openAI)
     }
 
@@ -60,7 +62,7 @@ final class ProviderPanelState: ObservableObject {
         guard let service = selected.keychainService else { return }
         let key = keyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !key.isEmpty, !key.contains(where: \.isWhitespace) else {
-            error = "请输入完整的 API Key。"
+            error = L10n.text("invalidKey")
             return
         }
         do {
@@ -78,20 +80,44 @@ final class ProviderPanelState: ObservableObject {
 }
 
 struct ProviderPanel: View {
+    static let width: CGFloat = 340
+
     @ObservedObject var state: ProviderPanelState
+    @ObservedObject var settings: AppSettings
     var confirm: () -> Void
     var cancel: () -> Void
     var quit: () -> Void
 
     var body: some View {
+        Group {
+            if state.showingSettings {
+                SettingsPanel(settings: settings, back: { state.showingSettings = false }, quit: quit)
+            } else {
+                providerContent
+            }
+        }
+        .padding(16)
+        .frame(width: Self.width)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18)
+                .strokeBorder(Color.primary.opacity(0.14))
+                .allowsHitTesting(false)
+        }
+    }
+
+    private var providerContent: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("Codex 模型提供商")
+                Text(L10n.text("panelTitle"))
                     .font(.system(size: 17, weight: .semibold))
                     .accessibilityAddTraits(.isHeader)
                 Spacer()
-                Button(action: quit) {
-                    Image(systemName: "power")
+                Button {
+                    state.cancelKeyEdit()
+                    state.showingSettings = true
+                } label: {
+                    Image(systemName: "gearshape")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.secondary)
                         .frame(width: 26, height: 26)
@@ -99,18 +125,16 @@ struct ProviderPanel: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(state.busy)
-                .help("退出切换器")
-                .accessibilityLabel("退出切换器")
+                .help(L10n.text("settings"))
+                .accessibilityLabel(L10n.text("settings"))
             }
 
-            VStack(spacing: 5) {
-                ForEach(Provider.allCases, content: row)
-            }
-            .disabled(state.busy)
-
-            if let setupURL = state.selected.setupURL {
-                credentials(setupURL: setupURL)
-                    .disabled(state.busy)
+            ViewThatFits(in: .vertical) {
+                options.fixedSize(horizontal: false, vertical: true)
+                ScrollView {
+                    options
+                }
+                .scrollBounceBehavior(.basedOnSize)
             }
 
             VStack(alignment: .leading, spacing: 11) {
@@ -120,7 +144,7 @@ struct ProviderPanel: View {
                         .font(.system(size: 11))
                         .fixedSize(horizontal: false, vertical: true)
                 } else if state.current != nil {
-                    Text("切换后会重新打开 ChatGPT，请先完成正在运行的任务。")
+                    Text(L10n.text("restartNotice"))
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -128,14 +152,14 @@ struct ProviderPanel: View {
 
                 HStack(spacing: 8) {
                     Spacer()
-                    Button("取消", action: cancel)
+                    Button(L10n.text("cancel"), action: cancel)
                         .keyboardShortcut(.cancelAction)
                     if state.busy {
                         ProgressView()
                             .controlSize(.small)
-                            .accessibilityLabel("正在切换")
+                            .accessibilityLabel(L10n.text("switching"))
                     }
-                    Button(state.current == nil ? "确认并打开" : "确认并重启", action: confirm)
+                    Button(L10n.text(state.current == nil ? "confirmOpen" : "confirmRestart"), action: confirm)
                         .buttonStyle(.borderedProminent)
                         .keyboardShortcut(.defaultAction)
                         .disabled(!state.canConfirm)
@@ -143,9 +167,18 @@ struct ProviderPanel: View {
                 .controlSize(.regular)
             }
         }
-        .padding(16)
-        .frame(width: 340)
-        .onDisappear(perform: state.cancelKeyEdit)
+    }
+
+    private var options: some View {
+        VStack(spacing: 14) {
+            VStack(spacing: 5) {
+                ForEach(Provider.allCases, content: row)
+            }
+            if let setupURL = state.selected.setupURL {
+                credentials(setupURL: setupURL)
+            }
+        }
+        .disabled(state.busy)
     }
 
     private func row(_ provider: Provider) -> some View {
@@ -160,7 +193,7 @@ struct ProviderPanel: View {
     private func credentials(setupURL: URL) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Picker("账号地区", selection: Binding(get: { state.selected.region }, set: state.selectRegion)) {
+                Picker(L10n.text("region"), selection: Binding(get: { state.selected.region }, set: state.selectRegion)) {
                     ForEach(ProviderRegion.allCases) { region in
                         Text(region.title).tag(region)
                     }
@@ -168,22 +201,22 @@ struct ProviderPanel: View {
                 .fixedSize()
                 Spacer()
                 if !state.editingKey {
-                    Button(state.hasKey ? "更换 API Key" : "设置 API Key", action: state.beginKeyEdit)
+                    Button(L10n.text(state.hasKey ? "replaceKey" : "setKey"), action: state.beginKeyEdit)
                 }
             }
             if state.editingKey {
                 HStack {
                     SecureField("API Key", text: $state.keyDraft)
                         .onSubmit(state.saveKey)
-                    Button("保存", action: state.saveKey)
-                    Button("关闭", action: state.cancelKeyEdit)
+                    Button(L10n.text("save"), action: state.saveKey)
+                    Button(L10n.text("close"), action: state.cancelKeyEdit)
                 }
             }
             HStack {
-                Text(state.hasKey ? "已存入 macOS 钥匙串" : "需要此套餐或平台的 API Key")
+                Text(L10n.text(state.hasKey ? "keySaved" : "keyRequired"))
                     .foregroundStyle(.secondary)
                 Spacer()
-                Link("官方指南", destination: setupURL)
+                Link(L10n.text("providerGuide"), destination: setupURL)
             }
             .font(.system(size: 11))
         }
@@ -221,7 +254,7 @@ private struct ProviderOption: View {
                 }
                 Spacer()
                 if current {
-                    Text("使用中")
+                    Text(L10n.text("inUse"))
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(.secondary)
                 }

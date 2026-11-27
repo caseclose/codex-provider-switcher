@@ -34,12 +34,12 @@ enum Provider: String, CaseIterable, Identifiable {
 
     var details: String {
         switch self {
-        case .openAI: "GPT · 默认启动"
+        case .openAI: L10n.text("defaultModel")
         case .deepSeek: "Flash 1017"
-        case .glmCoding: "GLM-5.4 · 订阅额度"
-        case .kimiCoding: "kimi-for-coding · 订阅额度"
-        case .glmAPI: "GLM-5.3 · 按量计费"
-        case .kimiAPI: "Kimi K3 · 按量计费"
+        case .glmCoding: L10n.text("planModel", "GLM-5.4")
+        case .kimiCoding: L10n.text("planModel", "kimi-for-coding")
+        case .glmAPI: L10n.text("usageModel", "GLM-5.3")
+        case .kimiAPI: L10n.text("usageModel", "Kimi K3")
         }
     }
 
@@ -76,7 +76,7 @@ enum ProviderRegion: String, CaseIterable, Identifiable {
     case china, international
 
     var id: Self { self }
-    var title: String { self == .china ? "中国大陆" : "国际" }
+    var title: String { L10n.text(self == .china ? "china" : "international") }
 }
 
 struct ProviderSelection: Equatable {
@@ -94,6 +94,6 @@ struct ProviderSelection: Equatable {
     }
 
     var title: String {
-        baseURL == nil ? provider.title : "\(provider.title)（\(region.title)）"
+        baseURL == nil ? provider.title : L10n.text("providerWithRegion", provider.title, region.title)
     }
 }

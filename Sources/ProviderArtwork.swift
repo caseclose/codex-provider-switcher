@@ -17,10 +17,17 @@ enum ProviderArtwork {
 
     static func statusImage(for provider: Provider, dark: Bool, in bundle: Bundle = .main) -> NSImage? {
         guard let logo = logo(for: provider, dark: dark, in: bundle) else { return nil }
-        let image = NSImage(size: NSSize(width: 22, height: 18), flipped: false) { _ in
-            let width: CGFloat = 13.5
+        let image = NSImage(size: NSSize(width: 24, height: 20), flipped: false) { _ in
+            let foreground = dark ? NSColor.white : NSColor.black
+            let outline = NSBezierPath(roundedRect: NSRect(x: 0.75, y: 1.25, width: 22.5, height: 17.5),
+                                       xRadius: 4.75, yRadius: 4.75)
+            outline.lineWidth = 0.8
+            foreground.withAlphaComponent(0.55).setStroke()
+            outline.stroke()
+
+            let width: CGFloat = 10
             let height = width * logo.size.height / logo.size.width
-            logo.draw(in: NSRect(x: 0.5, y: (18 - height) / 2, width: width, height: height),
+            logo.draw(in: NSRect(x: 4, y: (20 - height) / 2, width: width, height: height),
                       from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: [.interpolation: NSImageInterpolation.high])
 
             let arrows = NSBezierPath()
@@ -37,7 +44,9 @@ enum ProviderArtwork {
             arrows.move(to: NSPoint(x: 17.45, y: 8.7))
             arrows.line(to: NSPoint(x: 16, y: 7.25))
             arrows.line(to: NSPoint(x: 17.45, y: 5.8))
-            (dark ? NSColor.white : NSColor.black).withAlphaComponent(0.85).setStroke()
+            let inset = AffineTransform(translationByX: -0.8, byY: 1)
+            arrows.transform(using: inset)
+            foreground.withAlphaComponent(0.9).setStroke()
             arrows.stroke()
             return true
         }

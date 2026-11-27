@@ -1,16 +1,36 @@
-# Provider Switcher for Codex
+<p align="center">
+  <img src="docs/assets/app-icon.png" alt="" width="80" height="80">
+</p>
 
-A macOS menu bar utility for switching the model provider for new local Codex Desktop sessions.
+<h1 align="center">Provider Switcher for Codex</h1>
 
-[Download for macOS](https://github.com/caseclose/codex-provider-switcher/releases/latest) · [Project website](https://caseclose.github.io/codex-provider-switcher/) · [中文](#中文说明)
+<p align="center">Choose a provider from the macOS menu bar, then confirm to open a new local Codex Desktop session.</p>
 
-<img src="docs/assets/panel.png" alt="The switcher showing all six providers and the GLM Coding Plan setup controls" width="340">
+<p align="center">
+  <a href="https://github.com/caseclose/codex-provider-switcher/releases/latest">Download for macOS</a>
+  · <a href="https://caseclose.github.io/codex-provider-switcher/">Project website</a>
+  · <a href="#中文说明">中文说明</a>
+</p>
 
-## Install
+<p align="center"><sub>macOS 14+ · Apple silicon and Intel · MIT</sub></p>
+
+## Quick start
 
 1. Install and open the official ChatGPT desktop app at least once. The switcher requires macOS 14 or later. The release contains a universal binary for Apple silicon and Intel.
 2. Download `Codex-Provider-Switcher-macOS.zip` from [Releases](https://github.com/caseclose/codex-provider-switcher/releases/latest). Unzip it and move the app to Applications. The build is ad-hoc signed and has not been Apple-notarized. You can also [build it locally](#build).
 3. Open the switcher. Click its menu bar icon, choose a provider, then confirm. If ChatGPT is open, switching quits and reopens it. Finish active work first and start a fresh local Codex session after switching.
+
+<p align="center">
+  <img src="docs/assets/panel.png" alt="OpenAI is active and DeepSeek is selected. The panel is waiting for confirmation." width="340">
+</p>
+
+## Settings
+
+Open the gear in the menu bar panel to choose Simplified Chinese, Traditional Chinese, English, or Japanese, and System, Light, or Dark appearance. The default appearance follows macOS. The **About** section shows the installed version, checks GitHub for the latest stable release, and links to the issue form.
+
+The panel opens directly below the menu bar. On smaller displays, the provider list scrolls while the header and confirmation controls remain in view.
+
+The website also follows system appearance by default. Read it in [简体中文](https://caseclose.github.io/codex-provider-switcher/?lang=zh-Hans), [繁體中文](https://caseclose.github.io/codex-provider-switcher/?lang=zh-Hant), [English](https://caseclose.github.io/codex-provider-switcher/?lang=en), or [日本語](https://caseclose.github.io/codex-provider-switcher/?lang=ja).
 
 ## Providers
 

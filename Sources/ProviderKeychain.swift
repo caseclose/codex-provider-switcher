@@ -39,6 +39,6 @@ private struct KeychainError: LocalizedError {
 
     var errorDescription: String? {
         let reason = SecCopyErrorMessageString(status, nil) as String? ?? String(status)
-        return "无法访问 macOS 钥匙串。\(reason)"
+        return L10n.text("keychainError", reason)
     }
 }

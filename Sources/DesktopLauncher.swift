@@ -116,13 +116,13 @@ enum SwitchError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .appMissing(let path): "找不到 ChatGPT Desktop。\n\(path)"
-        case .launcherMissing: "找不到提供商启动器或模型目录。请重新安装切换器。"
-        case .bundledCLIMissing: "找不到 ChatGPT 自带的 Codex CLI。"
-        case .keyMissing(let title): "请先保存 \(title) 的 API Key。"
-        case .multipleInstances: "有多个 ChatGPT 实例正在运行。请先退出多余的实例。"
-        case .quitRejected: "ChatGPT 没有接受退出请求。请保存工作并退出 ChatGPT 后重试。"
-        case .quitTimedOut: "ChatGPT 尚未退出。请检查它的退出提示，处理后再试。"
+        case .appMissing(let path): L10n.text("desktopMissing", path)
+        case .launcherMissing: L10n.text("launcherMissing")
+        case .bundledCLIMissing: L10n.text("cliMissing")
+        case .keyMissing(let title): L10n.text("missingKey", title)
+        case .multipleInstances: L10n.text("multipleInstances")
+        case .quitRejected: L10n.text("quitRejected")
+        case .quitTimedOut: L10n.text("quitTimedOut")
         }
     }
 }

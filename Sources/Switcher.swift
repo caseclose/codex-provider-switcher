@@ -1,12 +1,40 @@
 import AppKit
+import Combine
 import SwiftUI
 
+// The status item and visible frame are both expressed in macOS screen coordinates.
+enum ProviderPanelPosition {
+    static func frame(anchor: NSRect, visibleFrame: NSRect, contentSize: NSSize) -> NSRect {
+        let top = min(anchor.minY, visibleFrame.maxY)
+        let width = min(contentSize.width, visibleFrame.width)
+        let height = min(ceil(contentSize.height), max(0, top - visibleFrame.minY))
+        let x = min(max(anchor.midX - width / 2, visibleFrame.minX), visibleFrame.maxX - width)
+        return NSRect(x: x, y: top - height, width: width, height: height)
+    }
+}
+
+private final class ProviderWindow: NSPanel {
+    override var canBecomeKey: Bool { true }
+}
+
 @MainActor
-final class Switcher: NSObject, NSApplicationDelegate {
-    private let status = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-    private let popover = NSPopover()
+final class Switcher: NSObject, NSApplicationDelegate, NSWindowDelegate {
+    private let status = NSStatusBar.system.statusItem(withLength: 27)
     private let panel = ProviderPanelState()
+    private let settings = AppSettings()
+    private let window = ProviderWindow(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel],
+                                        backing: .buffered, defer: false)
+    private lazy var host = NSHostingController(rootView: ProviderPanel(
+        state: panel,
+        settings: settings,
+        confirm: { [weak self] in self?.confirmSelection() },
+        cancel: { [weak self] in self?.closePanel() },
+        quit: { NSApp.terminate(nil) }
+    ))
     private var appearanceObservation: NSKeyValueObservation?
+    private var panelObservation: AnyCancellable?
+    private var settingsObservation: AnyCancellable?
+    private var layoutScheduled = false
     private let launcher = DesktopLauncher(
         appURL: NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.openai.codex")
             ?? URL(fileURLWithPath: "/Applications/ChatGPT.app", isDirectory: true),
@@ -21,14 +49,22 @@ final class Switcher: NSObject, NSApplicationDelegate {
         appearanceObservation = status.button?.observe(\.effectiveAppearance) { [weak self] _, _ in
             Task { @MainActor in self?.refresh() }
         }
-        popover.behavior = .transient
-        popover.animates = true
-        popover.contentViewController = NSHostingController(rootView: ProviderPanel(
-            state: panel,
-            confirm: { [weak self] in self?.confirmSelection() },
-            cancel: { [weak self] in self?.popover.close() },
-            quit: { NSApp.terminate(nil) }
-        ))
+        window.level = .popUpMenu
+        window.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary, .transient]
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.hasShadow = true
+        window.hidesOnDeactivate = false
+        host.sizingOptions = []
+        window.contentViewController = host
+        window.delegate = self
+        window.appearance = settings.appearance.nativeAppearance
+        panelObservation = panel.objectWillChange.sink { [weak self] in self?.schedulePanelLayout() }
+        settingsObservation = settings.objectWillChange.sink { [weak self] in
+            DispatchQueue.main.async { [weak self] in self?.applySettings() }
+        }
+        NotificationCenter.default.addObserver(self, selector: #selector(screenParametersChanged),
+                                               name: NSApplication.didChangeScreenParametersNotification, object: nil)
 
         let events = NSWorkspace.shared.notificationCenter
         for event in [NSWorkspace.didLaunchApplicationNotification, NSWorkspace.didTerminateApplicationNotification] {
@@ -46,7 +82,7 @@ final class Switcher: NSObject, NSApplicationDelegate {
     private func refresh() {
         panel.current = launcher.runningProvider
         let selection = panel.current ?? .openAI
-        let label = panel.current == nil ? "默认 \(selection.title)" : "当前 \(selection.title)"
+        let label = L10n.text(panel.current == nil ? "defaultProvider" : "currentProvider", selection.title)
         let dark = status.button?.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
         if !panel.busy, let mark = ProviderArtwork.statusImage(for: selection.provider, dark: dark) {
             status.button?.image = mark
@@ -57,19 +93,61 @@ final class Switcher: NSObject, NSApplicationDelegate {
             status.button?.image = fallback
         }
         status.button?.imagePosition = .imageOnly
-        status.button?.setAccessibilityLabel("Codex 提供商切换器，\(label)")
+        status.button?.setAccessibilityLabel(L10n.text("statusLabel", label))
         status.button?.toolTip = "Codex · \(label)"
     }
 
     @objc private func togglePanel(_ button: NSStatusBarButton) {
-        if popover.isShown {
-            popover.close()
+        if window.isVisible {
+            closePanel()
             return
         }
         refresh()
         panel.prepareToOpen()
-        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-        popover.contentViewController?.view.window?.makeKey()
+        guard layoutPanel() else { return }
+        window.makeKeyAndOrderFront(nil)
+    }
+
+    func windowDidResignKey(_ notification: Notification) { closePanel() }
+
+    @objc private func screenParametersChanged() { schedulePanelLayout() }
+
+    private func applySettings() {
+        window.appearance = settings.appearance.nativeAppearance
+        refresh()
+        schedulePanelLayout()
+    }
+
+    private func closePanel() {
+        guard window.isVisible else { return }
+        window.orderOut(nil)
+        panel.cancelKeyEdit()
+    }
+
+    private func schedulePanelLayout() {
+        guard window.isVisible, !layoutScheduled else { return }
+        layoutScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.layoutScheduled = false
+            if self.window.isVisible { _ = self.layoutPanel() }
+        }
+    }
+
+    private func layoutPanel() -> Bool {
+        guard let button = status.button, let statusWindow = button.window else { return false }
+        let anchor = statusWindow.convertToScreen(button.convert(button.bounds, to: nil))
+        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(NSPoint(x: anchor.midX, y: anchor.midY)) })
+                ?? statusWindow.screen else { return false }
+        return layoutPanel(anchor: anchor, visibleFrame: screen.visibleFrame)
+    }
+
+    private func layoutPanel(anchor: NSRect, visibleFrame: NSRect) -> Bool {
+        let size = host.sizeThatFits(in: NSSize(width: ProviderPanel.width, height: max(900, visibleFrame.height)))
+        let frame = ProviderPanelPosition.frame(anchor: anchor, visibleFrame: visibleFrame, contentSize: size)
+        guard frame.height > 0 else { return false }
+        window.setFrame(frame, display: true)
+        return true
     }
 
     private func confirmSelection() {
@@ -87,7 +165,7 @@ final class Switcher: NSObject, NSApplicationDelegate {
             do {
                 try await launcher.open(selection, restart: restart)
                 panel.didLaunch()
-                popover.close()
+                closePanel()
             } catch {
                 panel.error = error.localizedDescription
             }
