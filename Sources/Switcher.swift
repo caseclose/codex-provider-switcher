@@ -51,8 +51,7 @@ final class Switcher: NSObject, NSApplicationDelegate {
         if !panel.busy, let mark = ProviderArtwork.statusImage(for: selection.provider, dark: dark) {
             status.button?.image = mark
         } else {
-            let symbol = selection.baseURL != nil && !panel.busy ? selection.provider.symbol : "arrow.left.arrow.right"
-            let fallback = NSImage(systemSymbolName: symbol, accessibilityDescription: label)?
+            let fallback = NSImage(systemSymbolName: "arrow.left.arrow.right", accessibilityDescription: label)?
                 .withSymbolConfiguration(.init(pointSize: 14, weight: .semibold))
             fallback?.isTemplate = true
             status.button?.image = fallback

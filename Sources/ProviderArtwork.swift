@@ -6,7 +6,10 @@ enum ProviderArtwork {
         switch provider {
         case .openAI: name = dark ? "OpenAIWhite" : "OpenAIBlack"
         case .deepSeek: name = "DeepSeekBlue"
-        default: return nil
+        case .glmCoding: name = "ZCode"
+        case .glmAPI: name = "BigModel"
+        case .kimiCoding: name = dark ? "KimiCodeDark" : "KimiCodeLight"
+        case .kimiAPI: name = dark ? "KimiPlatformDark" : "KimiPlatformLight"
         }
         guard let url = bundle.url(forResource: name, withExtension: "png") else { return nil }
         return NSImage(contentsOf: url)

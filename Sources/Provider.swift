@@ -43,14 +43,6 @@ enum Provider: String, CaseIterable, Identifiable {
         }
     }
 
-    var symbol: String {
-        switch self {
-        case .glmCoding, .glmAPI: "g.circle"
-        case .kimiCoding, .kimiAPI: "k.circle"
-        case .openAI, .deepSeek: "cpu"
-        }
-    }
-
     func setupURL(in region: ProviderRegion) -> URL? {
         let address: String
         switch self {

@@ -207,7 +207,7 @@ private struct ProviderOption: View {
                             .scaledToFit()
                             .frame(width: 19, height: 19)
                     } else {
-                        Image(systemName: provider.symbol).font(.system(size: 17, weight: .semibold))
+                        Image(systemName: "cpu").font(.system(size: 17, weight: .semibold))
                     }
                 }
                 .frame(width: 30, height: 30)
