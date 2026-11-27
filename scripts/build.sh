@@ -18,8 +18,8 @@ resources="$staged/Contents/Resources"
 binary="$staged/Contents/MacOS/CodexProviderSwitcher"
 mkdir -p "$resources" "$(dirname "$binary")" "$work/AppIcon.iconset"
 cp "$root/Resources/Info.plist" "$staged/Contents/"
-cp "$root/Resources/deepseek-models.json" "$root/Resources/deepseek-codex" "$resources/"
-chmod 755 "$resources/deepseek-codex"
+cp "$root/Resources/"*-models.json "$root/Resources/provider-codex" "$root/Resources/deepseek-codex" "$resources/"
+chmod 755 "$resources/provider-codex" "$resources/deepseek-codex"
 
 # OpenAI and DeepSeek own these marks. They identify the configured providers in the UI.
 curl --fail --silent --show-error --location 'https://cdn.openai.com/brand/openai-logos.zip' -o "$work/openai-logos.zip"
@@ -37,7 +37,9 @@ iconutil -c icns "$work/AppIcon.iconset" -o "$resources/AppIcon.icns"
 
 sources=(
     "$root/Sources/DesktopLauncher.swift"
+    "$root/Sources/Provider.swift"
     "$root/Sources/ProviderArtwork.swift"
+    "$root/Sources/ProviderKeychain.swift"
     "$root/Sources/ProviderPanel.swift"
     "$root/Sources/Switcher.swift"
 )

@@ -1,10 +1,10 @@
 # Provider Switcher for Codex
 
-A small macOS menu bar utility for starting local Codex sessions with OpenAI or DeepSeek Flash 1017.
+A macOS menu bar utility for switching the model provider for new local Codex Desktop sessions.
 
 [Download for macOS](https://github.com/caseclose/codex-provider-switcher/releases/latest) · [Project website](https://caseclose.github.io/codex-provider-switcher/) · [中文](#中文说明)
 
-<img src="docs/assets/appearance.png" alt="The switcher with OpenAI and DeepSeek selected in light and dark appearance" width="780">
+<img src="docs/assets/panel.png" alt="The switcher showing all six providers and the GLM Coding Plan setup controls" width="340">
 
 ## Install
 
@@ -12,11 +12,36 @@ A small macOS menu bar utility for starting local Codex sessions with OpenAI or 
 2. Download `Codex-Provider-Switcher-macOS.zip` from [Releases](https://github.com/caseclose/codex-provider-switcher/releases/latest). Unzip it and move the app to Applications. The build is ad-hoc signed and has not been Apple-notarized. You can also [build it locally](#build).
 3. Open the switcher. Click its menu bar icon, choose a provider, then confirm. If ChatGPT is open, switching quits and reopens it. Finish active work first and start a fresh local Codex session after switching.
 
-OpenAI uses your normal desktop startup. To retain OpenAI as the default, keep `model_provider = "openai"` near the top of `~/.codex/config.toml`, or leave that setting unset. DeepSeek is selected for the current launch only. The switcher does not write to your Codex configuration.
+## Providers
+
+| Menu option | Default model | Access |
+| --- | --- | --- |
+| OpenAI | Desktop default | Your usual Codex sign-in and configuration |
+| DeepSeek | `deepseek-flash` | [DeepSeek API](#set-up-deepseek-once) |
+| ZCode / GLM Coding Plan | `glm-5.4` | GLM Coding Plan API key from BigModel or Z.ai |
+| Kimi Coding Plan | `kimi-for-coding` | Kimi Code API key from the Kimi Code console |
+| GLM API | `glm-5.3` | Pay-as-you-go API key from BigModel or Z.ai |
+| Kimi API | `kimi-k3` | Pay-as-you-go API key from Moonshot Open Platform |
+
+### Set up GLM or Kimi
+
+1. Create an API key for the option you want. For ZCode, use a key from the GLM Coding Plan associated with your account. For Kimi Coding Plan, create a key in the Kimi Code console.
+2. In the switcher, select the provider and the region that issued your key. Click **设置 API Key** (Set API Key), paste it and save. Each provider and region has its own macOS Keychain item.
+3. Confirm the switch and start a new local Codex session. If macOS asks whether `security` may access the Keychain item for this provider, allow the lookup to continue.
+
+GLM and Kimi requests go directly to the official regional Responses endpoint. A preset applies to the current launch. OpenAI uses your normal desktop startup. To keep OpenAI as the default for normal launches, leave `model_provider` unset in `~/.codex/config.toml` or set it to `"openai"`. The switcher applies its presets through launch arguments and leaves the configuration file intact.
+
+| Provider | Mainland China | International |
+| --- | --- | --- |
+| GLM Coding Plan / GLM API | `https://open.bigmodel.cn/api/v1` | `https://api.z.ai/api/v1` |
+| Kimi Coding Plan | `https://api.kimi.com/coding/v1` | `https://api.kimi.ai/coding/v1` |
+| Kimi API | `https://api.moonshot.cn/v1` | `https://api.moonshot.ai/v1` |
+
+Official guides · [BigModel Coding Plan](https://docs.bigmodel.cn/cn/coding-plan/tool/codex) · [Z.ai Coding Plan](https://docs.z.ai/devpack/tool/codex) · [GLM-5.3 API](https://docs.bigmodel.cn/cn/guide/models/text/glm-5.3) · [Kimi Code](https://www.kimi.com/code/docs/third-party-tools/codex.html) · [Kimi API](https://www.kimi.ai/resources/codex-api)
 
 ## Set up DeepSeek once
 
-This step is only for DeepSeek. If your Codex config already has a working provider called `deepseek`, use it as-is. Otherwise:
+If your Codex config already has a working provider called `deepseek`, you can use it with the switcher. To set it up for the first time, follow these steps.
 
 1. Create a DeepSeek API key in the [DeepSeek developer platform](https://platform.deepseek.com/).
 2. Open **Keychain Access** and select your **login** keychain. Choose **File → New Password Item**. Name the item `codex-provider-deepseek` and enter your DeepSeek key in the password field.
@@ -48,9 +73,9 @@ The build downloads provider artwork from the official sources and writes the si
 
 ## 中文说明
 
-这是一个 macOS 菜单栏工具。点击小图标打开面板，选择 **OpenAI** 或 **DeepSeek Flash 1017**，确认后才会重新打开 ChatGPT。再新建一个本地 Codex 会话即可。普通启动继续使用你原本的默认提供商。
+从 macOS 菜单栏打开切换器，可选 **OpenAI**、**DeepSeek**、**ZCode / GLM Coding Plan**、**Kimi Coding Plan**、**GLM API** 或 **Kimi API**。切换后新建一个本地 Codex 会话。
 
-使用 DeepSeek 前，需要在 Codex 里配置名为 `deepseek` 的提供商。上面的配置把 API Key 存在 macOS 钥匙串，推理请求直连 DeepSeek 官方 API。
+首次使用 GLM 或 Kimi 时，选择密钥所属地区，点击「设置 API Key」并保存。套餐与按量 API 使用各自的凭据，密钥保存在 macOS 钥匙串。DeepSeek 沿用上文的 `deepseek` 配置。
 
 ## License
 

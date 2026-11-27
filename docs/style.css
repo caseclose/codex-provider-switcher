@@ -61,6 +61,8 @@ h1 span { color: var(--mint); }
 .preview {
   min-width: 0;
   margin: 0;
+  display: grid;
+  place-items: center;
   padding: clamp(16px, 3vw, 35px);
   border: 1px solid #394863;
   border-radius: 27px;
@@ -68,13 +70,11 @@ h1 span { color: var(--mint); }
 }
 .preview img {
   display: block;
-  width: 100%;
+  width: min(100%, 340px);
   height: auto;
   border-radius: clamp(12px, 2.1vw, 24px);
   box-shadow: 0 20px 38px #080e1e80;
 }
-.preview figcaption { margin: 17px 0 0; color: #cfdbef; font-size: 0.875rem; }
-
 .setup { padding: 42px 0 48px; border-top: 1px solid var(--line); }
 h2 { margin: 0 0 23px; font-size: clamp(1.55rem, 3vw, 2rem); line-height: 1.25; }
 .setup ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; margin: 0 0 22px; padding-left: 1.4rem; }
@@ -82,6 +82,16 @@ h2 { margin: 0 0 23px; font-size: clamp(1.55rem, 3vw, 2rem); line-height: 1.25; 
 .setup li::marker { color: var(--mint); font-weight: 660; }
 h3 { margin: 0 0 7px; font-size: 1.03rem; }
 .setup p { margin: 0; color: var(--muted); }
+.providers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.providers li { padding: 16px; border: 1px solid var(--line); border-radius: 12px; }
+.setup-links { display: flex; flex-wrap: wrap; gap: 10px 24px; }
 .text-link { color: var(--mint); text-underline-offset: 3px; text-decoration: underline; }
 .site-footer { display: flex; justify-content: space-between; gap: 18px; padding-block: 24px 35px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.875rem; }
 .site-footer p { margin: 0; }
@@ -91,6 +101,7 @@ h3 { margin: 0 0 7px; font-size: 1.03rem; }
   .wrap { width: min(100% - 36px, 550px); }
   .hero { grid-template-columns: 1fr; gap: 36px; }
   .setup ol { grid-template-columns: 1fr; gap: 17px; }
+  .providers { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 400px) {
@@ -100,6 +111,7 @@ h3 { margin: 0 0 7px; font-size: 1.03rem; }
   .identity small { display: block; font-size: 0.75rem; }
   nav { font-size: 0.82rem; }
   h1 { font-size: clamp(2.55rem, 11vw, 3rem); }
+  .providers { grid-template-columns: 1fr; }
   .site-footer { flex-direction: column; gap: 7px; }
 }
 

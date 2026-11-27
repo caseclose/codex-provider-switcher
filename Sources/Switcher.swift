@@ -11,7 +11,7 @@ final class Switcher: NSObject, NSApplicationDelegate {
         appURL: NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.openai.codex")
             ?? URL(fileURLWithPath: "/Applications/ChatGPT.app", isDirectory: true),
         bundleIdentifier: "com.openai.codex",
-        deepSeekCLI: Bundle.main.resourceURL!.appendingPathComponent("deepseek-codex")
+        providerCLI: Bundle.main.resourceURL!.appendingPathComponent("provider-codex")
     )
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -45,13 +45,14 @@ final class Switcher: NSObject, NSApplicationDelegate {
 
     private func refresh() {
         panel.current = launcher.runningProvider
-        let provider = panel.current ?? .openAI
-        let label = panel.current == nil ? "默认 \(provider.title)" : "当前 \(provider.title)"
+        let selection = panel.current ?? .openAI
+        let label = panel.current == nil ? "默认 \(selection.title)" : "当前 \(selection.title)"
         let dark = status.button?.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        if !panel.busy, let mark = ProviderArtwork.statusImage(for: provider, dark: dark) {
+        if !panel.busy, let mark = ProviderArtwork.statusImage(for: selection.provider, dark: dark) {
             status.button?.image = mark
         } else {
-            let fallback = NSImage(systemSymbolName: "arrow.left.arrow.right", accessibilityDescription: label)?
+            let symbol = selection.baseURL != nil && !panel.busy ? selection.provider.symbol : "arrow.left.arrow.right"
+            let fallback = NSImage(systemSymbolName: symbol, accessibilityDescription: label)?
                 .withSymbolConfiguration(.init(pointSize: 14, weight: .semibold))
             fallback?.isTemplate = true
             status.button?.image = fallback
@@ -74,7 +75,8 @@ final class Switcher: NSObject, NSApplicationDelegate {
 
     private func confirmSelection() {
         guard panel.canConfirm else { return }
-        let provider = panel.selected
+        let selection = panel.selected
+        let restart = panel.keyChangedForCurrentSelection
         panel.error = nil
         panel.busy = true
         refresh()
@@ -84,7 +86,8 @@ final class Switcher: NSObject, NSApplicationDelegate {
                 refresh()
             }
             do {
-                try await launcher.open(provider)
+                try await launcher.open(selection, restart: restart)
+                panel.didLaunch()
                 popover.close()
             } catch {
                 panel.error = error.localizedDescription

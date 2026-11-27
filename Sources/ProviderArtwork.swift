@@ -2,7 +2,12 @@ import AppKit
 
 enum ProviderArtwork {
     static func logo(for provider: Provider, dark: Bool, in bundle: Bundle = .main) -> NSImage? {
-        let name = provider == .deepSeek ? "DeepSeekBlue" : (dark ? "OpenAIWhite" : "OpenAIBlack")
+        let name: String
+        switch provider {
+        case .openAI: name = dark ? "OpenAIWhite" : "OpenAIBlack"
+        case .deepSeek: name = "DeepSeekBlue"
+        default: return nil
+        }
         guard let url = bundle.url(forResource: name, withExtension: "png") else { return nil }
         return NSImage(contentsOf: url)
     }

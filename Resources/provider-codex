@@ -1,0 +1,48 @@
+#!/bin/bash
+set -eu
+app=${CODEX_SWITCHER_DESKTOP_APP:-/Applications/ChatGPT.app}
+runtime="$app/Contents/Resources/codex-cli"
+codex="$runtime/CodexCLI.app/Contents/MacOS/codex"
+if [ ! -x "$codex" ]; then
+    codex="$runtime/bin/codex"
+fi
+if [ ! -x "$codex" ]; then
+    printf '%s\n' 'ChatGPT Desktop’s bundled Codex CLI was not found.' >&2
+    exit 1
+fi
+resources=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+provider=${CODEX_SWITCHER_PROVIDER:?Missing provider ID}
+model=${CODEX_SWITCHER_MODEL:?Missing model ID}
+
+toml_string() {
+    local value=$1
+    value=${value//\\/\\\\}
+    value=${value//\"/\\\"}
+    value=${value//$'\n'/\\n}
+    value=${value//$'\r'/\\r}
+    value=${value//$'\t'/\\t}
+    printf '"%s"' "$value"
+}
+
+launch_config=(
+    -c "model_provider=$(toml_string "$provider")"
+    -c "model=$(toml_string "$model")"
+    -c "model_catalog_json=$(toml_string "$resources/$model-models.json")"
+)
+if [[ $provider != deepseek ]]; then
+    [[ $provider =~ ^switcher_[a-z_]+$ ]] || exit 1
+    base_url=$(toml_string "${CODEX_SWITCHER_BASE_URL:?Missing provider endpoint}")
+    service=$(toml_string "${CODEX_SWITCHER_KEYCHAIN_SERVICE:?Missing Keychain service}")
+    account=$(toml_string "${CODEX_SWITCHER_KEYCHAIN_ACCOUNT:?Missing Keychain account}")
+    auth="{command = \"/usr/bin/security\", args = [\"find-generic-password\", \"-a\", $account, \"-s\", $service, \"-w\"], timeout_ms = 60000}"
+    launch_config+=(
+        -c "model_providers.$provider = {name = $(toml_string "$model"), base_url = $base_url, wire_api = \"responses\", auth = $auth}"
+        -c 'model_reasoning_effort="high"'
+        -c 'desktop.enabled-reasoning-efforts=["low","high","max"]'
+    )
+    if [[ $provider != switcher_kimi_coding ]]; then
+        launch_config+=(-c 'web_search="disabled"')
+    fi
+fi
+
+exec "$codex" "${launch_config[@]}" "$@"

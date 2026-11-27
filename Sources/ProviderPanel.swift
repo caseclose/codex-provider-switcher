@@ -1,28 +1,80 @@
 import SwiftUI
 
-extension Provider {
-    var details: String {
-        switch self {
-        case .openAI: "GPT · 默认"
-        case .deepSeek: "Flash 1017"
-        }
-    }
-}
-
 @MainActor
 final class ProviderPanelState: ObservableObject {
-    @Published var current: Provider?
-    @Published var selected: Provider = .openAI
+    @Published var current: ProviderSelection? {
+        didSet { if current != oldValue { changedKey = nil } }
+    }
+    @Published private(set) var selected: ProviderSelection = .openAI
     @Published var busy = false
     @Published var error: String?
+    @Published var keyDraft = ""
+    @Published private(set) var hasKey = false
+    @Published private(set) var editingKey = false
+    @Published private var changedKey: ProviderSelection?
 
-    var canConfirm: Bool { !busy && selected != current }
+    var keyChangedForCurrentSelection: Bool { changedKey == selected && current == selected }
+    var canConfirm: Bool {
+        !busy && !editingKey && (selected.keychainService == nil || hasKey)
+            && (selected != current || keyChangedForCurrentSelection)
+    }
 
     func prepareToOpen() {
         guard !busy else { return }
-        selected = current ?? .openAI
+        select(current ?? .openAI)
+    }
+
+    func select(_ provider: Provider) {
+        let stored = UserDefaults.standard.string(forKey: "Region.\(provider.rawValue)")
+        let region = stored.flatMap(ProviderRegion.init(rawValue:)) ?? .china
+        select(ProviderSelection(provider: provider, region: region))
+    }
+
+    func selectRegion(_ region: ProviderRegion) {
+        let provider = selected.provider
+        UserDefaults.standard.set(region.rawValue, forKey: "Region.\(provider.rawValue)")
+        select(ProviderSelection(provider: provider, region: region))
+    }
+
+    private func select(_ selection: ProviderSelection) {
+        selected = selection
+        error = nil
+        cancelKeyEdit()
+        hasKey = false
+        guard let service = selection.keychainService else { return }
+        do { hasKey = try ProviderKeychain.contains(service) }
+        catch { self.error = error.localizedDescription }
+    }
+
+    func beginKeyEdit() {
+        editingKey = true
         error = nil
     }
+
+    func cancelKeyEdit() {
+        keyDraft = ""
+        editingKey = false
+    }
+
+    func saveKey() {
+        guard let service = selected.keychainService else { return }
+        let key = keyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !key.isEmpty, !key.contains(where: \.isWhitespace) else {
+            error = "请输入完整的 API Key。"
+            return
+        }
+        do {
+            try ProviderKeychain.save(key, for: service)
+            if current == selected { changedKey = selected }
+            hasKey = true
+            error = nil
+            cancelKeyEdit()
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    func didLaunch() { changedKey = nil }
 }
 
 struct ProviderPanel: View {
@@ -51,11 +103,15 @@ struct ProviderPanel: View {
                 .accessibilityLabel("退出切换器")
             }
 
-            VStack(spacing: 7) {
-                row(.openAI)
-                row(.deepSeek)
+            VStack(spacing: 5) {
+                ForEach(Provider.allCases, content: row)
             }
             .disabled(state.busy)
+
+            if let setupURL = state.selected.setupURL {
+                credentials(setupURL: setupURL)
+                    .disabled(state.busy)
+            }
 
             VStack(alignment: .leading, spacing: 11) {
                 if let error = state.error {
@@ -64,7 +120,7 @@ struct ProviderPanel: View {
                         .font(.system(size: 11))
                         .fixedSize(horizontal: false, vertical: true)
                 } else if state.current != nil {
-                    Text("切换会重新打开 ChatGPT。请先完成正在运行的任务。")
+                    Text("切换后会重新打开 ChatGPT，请先完成正在运行的任务。")
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -88,19 +144,49 @@ struct ProviderPanel: View {
             }
         }
         .padding(16)
-        .frame(width: 306)
+        .frame(width: 340)
+        .onDisappear(perform: state.cancelKeyEdit)
     }
 
     private func row(_ provider: Provider) -> some View {
         ProviderOption(
             provider: provider,
-            selected: state.selected == provider,
-            current: state.current == provider,
-            select: {
-                state.selected = provider
-                state.error = nil
-            }
+            selected: state.selected.provider == provider,
+            current: state.current?.provider == provider,
+            select: { state.select(provider) }
         )
+    }
+
+    private func credentials(setupURL: URL) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Picker("账号地区", selection: Binding(get: { state.selected.region }, set: state.selectRegion)) {
+                    ForEach(ProviderRegion.allCases) { region in
+                        Text(region.title).tag(region)
+                    }
+                }
+                .fixedSize()
+                Spacer()
+                if !state.editingKey {
+                    Button(state.hasKey ? "更换 API Key" : "设置 API Key", action: state.beginKeyEdit)
+                }
+            }
+            if state.editingKey {
+                HStack {
+                    SecureField("API Key", text: $state.keyDraft)
+                        .onSubmit(state.saveKey)
+                    Button("保存", action: state.saveKey)
+                    Button("关闭", action: state.cancelKeyEdit)
+                }
+            }
+            HStack {
+                Text(state.hasKey ? "已存入 macOS 钥匙串" : "需要此套餐或平台的 API Key")
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Link("官方指南", destination: setupURL)
+            }
+            .font(.system(size: 11))
+        }
     }
 }
 
@@ -110,8 +196,6 @@ private struct ProviderOption: View {
     let current: Bool
     let select: () -> Void
     @Environment(\.colorScheme) private var colorScheme
-
-    private var name: String { provider == .openAI ? "OpenAI" : "DeepSeek" }
 
     var body: some View {
         Button(action: select) {
@@ -123,14 +207,14 @@ private struct ProviderOption: View {
                             .scaledToFit()
                             .frame(width: 19, height: 19)
                     } else {
-                        Image(systemName: "cpu").font(.system(size: 15, weight: .semibold))
+                        Image(systemName: provider.symbol).font(.system(size: 17, weight: .semibold))
                     }
                 }
-                .frame(width: 34, height: 34)
+                .frame(width: 30, height: 30)
                 .background(Color.primary.opacity(0.055), in: RoundedRectangle(cornerRadius: 9))
                 .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(name).font(.system(size: 13, weight: .semibold))
+                    Text(provider.title).font(.system(size: 13, weight: .semibold))
                     Text(provider.details)
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
@@ -146,7 +230,7 @@ private struct ProviderOption: View {
                     .foregroundStyle(selected ? Color.accentColor : Color.secondary.opacity(0.48))
                     .accessibilityHidden(true)
             }
-            .padding(9)
+            .padding(7)
             .background(
                 selected ? Color.accentColor.opacity(0.10) : Color.primary.opacity(0.035),
                 in: RoundedRectangle(cornerRadius: 11)
